@@ -874,7 +874,7 @@ id,name,email
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    History ({templateHistory.length})
+                    Saved ({templateHistory.length})
                   </button>
                 </div>
 
@@ -882,7 +882,7 @@ id,name,email
                 {showHistory && (
                   <div className="mb-4 bg-gray-800 border border-gray-700 rounded-lg">
                     <div className="p-4 border-b border-gray-700">
-                      <h3 className="text-lg font-semibold mb-3">Template History</h3>
+                      <h3 className="text-lg font-semibold mb-3">Saved template</h3>
                       
                       {/* Save Current Template */}
                       <div className="flex gap-2 mb-4">
