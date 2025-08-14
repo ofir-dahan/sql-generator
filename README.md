@@ -1,6 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SSMS Query Generator
 
-## Getting Started
+A powerful React Next.js application for generating SQL Server Management Studio (SSMS) queries from JSON, CSV, and TSV data.
+
+## 🚀 Features
+
+- **Multi-Format Support**: Upload JSON, CSV, or TSV files, or paste data manually
+- **Smart Placeholder System**: 
+  - Single `{key}` creates individual rows for each record
+  - Double `{{key}}` creates comma-separated values for batch operations
+- **Interactive Template Building**: Ctrl/Cmd+click placeholders for smart insertion
+- **Batch Management**: Configurable batch sizes with automatic tab generation
+- **Template History**: Save and reuse your SQL templates
+- **Performance Optimized**: Debounced input and memoized components
+- **Syntax Highlighting**: Beautiful SQL syntax highlighting with VS Code theme
+
+## 🛠️ Technologies
+
+- **Frontend**: Next.js 15.4.6, React 19, TypeScript
+- **Styling**: Tailwind CSS
+- **File Upload**: React Dropzone with drag-and-drop
+- **Syntax Highlighting**: React Syntax Highlighter
+- **State Management**: React Hooks with localStorage persistence
+
+## 📦 Getting Started
 
 First, run the development server:
 
@@ -8,10 +30,6 @@ First, run the development server:
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

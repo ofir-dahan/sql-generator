@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "department": "Engineering",
+    "salary": 75000,
+    "manager_id": null
+  },
+  {
+    "id": 2,
+    "name": "Jane Smith",
+    "email": "jane@example.com",
+    "department": "Marketing",
+    "salary": 65000,
+    "manager_id": 1
+  },
+  {
+    "id": 3,
+    "name": "Bob Johnson",
+    "email": "bob@example.com",
+    "department": "Engineering",
+    "salary": 80000,
+    "manager_id": 1
+  },
+  {
+    "id": 4,
+    "name": "Alice Brown",
+    "email": "alice@example.com",
+    "department": "HR",
+    "salary": null,
+    "manager_id": null
+  },
+  {
+    "id": 5,
+    "name": "Charlie Wilson",
+    "email": "charlie@example.com",
+    "department": "Engineering",
+    "salary": 72000,
+    "manager_id": 3
+  }
+]

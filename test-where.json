@@ -1,0 +1,22 @@
+[
+  {
+    "corporateIdentifier": "42221",
+    "id": "101",
+    "name": "Company A"
+  },
+  {
+    "corporateIdentifier": "42222", 
+    "id": "102",
+    "name": "Company B"
+  },
+  {
+    "corporateIdentifier": null,
+    "id": "103",
+    "name": "Company C"
+  },
+  {
+    "corporateIdentifier": "42223",
+    "id": "104",
+    "name": null
+  }
+]
