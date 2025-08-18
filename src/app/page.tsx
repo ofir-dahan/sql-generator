@@ -58,6 +58,9 @@ export default function Home() {
   const [inputMode, setInputMode] = useState<'file' | 'manual'>('file');
   const [copySuccess, setCopySuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFileLoading, setIsFileLoading] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [progressMessage, setProgressMessage] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [fileName, setFileName] = useState<string>("");
   const [templateHistory, setTemplateHistory] = useState<TemplateHistory[]>([]);
@@ -323,7 +326,7 @@ export default function Home() {
       return;
     }
 
-    setIsLoading(true);
+    setIsFileLoading(true);
     setErrors([]);
     setFileName("Manual Input");
 
@@ -343,7 +346,7 @@ export default function Home() {
       setErrors([`Invalid data format: ${error instanceof Error ? error.message : 'Unknown error'}`]);
       setJsonData(null);
     } finally {
-      setIsLoading(false);
+      setIsFileLoading(false);
     }
   }, [manualData, parseDataText]);
 
@@ -360,7 +363,7 @@ export default function Home() {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
-      setIsLoading(true);
+      setIsFileLoading(true);
       setErrors([]);
       setFileName(file.name);
       
@@ -399,7 +402,7 @@ export default function Home() {
           setErrors([`Invalid file format: ${error instanceof Error ? error.message : 'Unknown error'}`]);
           setJsonData(null);
         } finally {
-          setIsLoading(false);
+          setIsFileLoading(false);
         }
       };
       reader.readAsText(file);
@@ -430,21 +433,46 @@ export default function Home() {
     setIsLoading(true);
     setErrors([]);
     setBatchSizeChanged(false);
+    setGenerationProgress(0);
+    setProgressMessage("Starting SQL generation...");
 
-    // First, handle double curly braces {{}} for comma-separated values
-    let processedTemplate = sqlTemplate;
-    const doubleCurlyMatches = sqlTemplate.match(/\{\{([^}]+)\}\}/g) || [];
-    
-    if (doubleCurlyMatches.length > 0) {
-      // For templates with double curly braces, generate only ALL and Without NULL tabs
-      doubleCurlyMatches.forEach(placeholder => {
-        const key = placeholder.replace(/\{\{|\}\}/g, '');
+    // Simulate progress
+    const progressSteps = [
+      { progress: 20, message: "Processing template..." },
+      { progress: 40, message: "Analyzing data structure..." },
+      { progress: 60, message: "Generating SQL statements..." },
+      { progress: 80, message: "Creating batch tabs..." },
+    ];
+
+    let currentStep = 0;
+    const progressInterval = setInterval(() => {
+      if (currentStep < progressSteps.length) {
+        setGenerationProgress(progressSteps[currentStep].progress);
+        setProgressMessage(progressSteps[currentStep].message);
+        currentStep++;
+      } else {
+        clearInterval(progressInterval);
+      }
+    }, 150);
+
+    // Continue with the original logic
+    setTimeout(() => {
+      // First, handle double curly braces {{}} for comma-separated values
+      let processedTemplate = sqlTemplate;
+      const doubleCurlyMatches = sqlTemplate.match(/\{\{([^}]+)\}\}/g) || [];
+      
+      if (doubleCurlyMatches.length > 0) {
+        setProgressMessage("Processing batch placeholders...");
         
-        // Get all unique values for this key from the JSON data
-        const allValues = jsonData
-          .map(row => row[key])
-          .filter((value, index, arr) => value !== null && value !== undefined && arr.indexOf(value) === index)
-          .map(value => typeof value === 'string' ? `'${value.replace(/'/g, "''")}'` : String(value));
+        // For templates with double curly braces, generate only ALL and Without NULL tabs
+        doubleCurlyMatches.forEach(placeholder => {
+          const key = placeholder.replace(/\{\{|\}\}/g, '');
+          
+          // Get all unique values for this key from the JSON data
+          const allValues = jsonData
+            .map(row => row[key])
+            .filter((value, index, arr) => value !== null && value !== undefined && arr.indexOf(value) === index)
+            .map(value => typeof value === 'string' ? `'${value.replace(/'/g, "''")}'` : String(value));
         
         // Replace placeholder with all values for ALL tab
         processedTemplate = processedTemplate.replace(placeholder, allValues.join(','));
@@ -514,8 +542,18 @@ export default function Home() {
       generateSqlTabs(processedTemplate);
     }
 
+    setGenerationProgress(100);
+    setProgressMessage("SQL generation complete!");
     setActiveTab(0);
     setIsLoading(false);
+    
+    // Clear progress after a short delay
+    setTimeout(() => {
+      setGenerationProgress(0);
+      setProgressMessage("");
+    }, 1000);
+    
+    }, 200); // Close the setTimeout
   }, [jsonData, sqlTemplate]);
 
   // Function to generate SQL tabs with batch regeneration capability
@@ -753,17 +791,48 @@ export default function Home() {
     });
   }, []);
 
+  // Function to copy full JSON to clipboard
+  const copyJsonToClipboard = useCallback(() => {
+    if (!jsonData) return;
+    
+    navigator.clipboard.writeText(JSON.stringify(jsonData, null, 2)).then(
+      () => {
+        // You could add a toast notification here
+        console.log('JSON copied to clipboard');
+      },
+      (err) => {
+        console.error('Failed to copy JSON: ', err);
+      }
+    );
+  }, [jsonData]);
+
   return (
     <ErrorBoundary>
       <main className="flex min-h-screen flex-col items-center p-12 bg-gray-900 text-white">
         <h1 className="text-5xl font-bold mb-10">Query Generator</h1>
-      <div className="w-full max-w-6xl">
-        {/* Loading Spinner */}
+        <div className="w-full max-w-6xl">
+        {/* Progress Bar for SQL Generation */}
         {isLoading && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-6 rounded-lg flex items-center space-x-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span>Processing...</span>
+            <div className="bg-gray-800 p-8 rounded-lg w-96 max-w-md">
+              <div className="text-center mb-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <h3 className="text-lg font-semibold text-white mb-2">Generating SQL Script</h3>
+                <p className="text-gray-300 text-sm">{progressMessage}</p>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-700 rounded-full h-3 mb-4">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${generationProgress}%` }}
+                ></div>
+              </div>
+              
+              {/* Progress Percentage */}
+              <div className="text-center">
+                <span className="text-blue-400 font-semibold">{generationProgress}%</span>
+              </div>
             </div>
           </div>
         )}
@@ -811,10 +880,15 @@ export default function Home() {
               {...getRootProps()}
               className={`p-10 border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors ${
                 isDragActive ? "border-blue-500 bg-gray-800" : "border-gray-600 hover:border-gray-500"
-              }`}
+              } ${isFileLoading ? "pointer-events-none opacity-50" : ""}`}
             >
-              <input {...getInputProps()} />
-              {isDragActive ? (
+              <input {...getInputProps()} disabled={isFileLoading} />
+              {isFileLoading ? (
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <p className="text-lg">Processing file...</p>
+                </div>
+              ) : isDragActive ? (
                 <p className="text-lg">Drop the files here ...</p>
               ) : (
                 <div>
@@ -852,10 +926,13 @@ id,name,email
               </div>
               <button
                 onClick={processManualData}
-                disabled={isLoading || !manualData.trim()}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors"
+                disabled={isFileLoading || !manualData.trim()}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors flex items-center gap-2"
               >
-                {isLoading ? "Processing..." : "Process Data"}
+                {isFileLoading && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {isFileLoading ? "Processing..." : "Process Data"}
               </button>
             </div>
           )}
@@ -990,7 +1067,18 @@ id,name,email
                 </div>
               </div>
               <div>
-                <h2 className="text-3xl font-semibold mb-4">JSON Preview ({jsonData.length} records)</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-3xl font-semibold">JSON Preview ({jsonData.length} records)</h2>
+                  <button
+                    onClick={copyJsonToClipboard}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    Copy Full JSON
+                  </button>
+                </div>
                 <div className="max-h-96 overflow-y-auto bg-gray-800 p-4 rounded-md">
                   <pre className="text-sm">
                     <code>{JSON.stringify(jsonData.slice(0, 5), null, 2)}</code>
@@ -1005,9 +1093,12 @@ id,name,email
             <button
               onClick={generateSqlScript}
               disabled={isLoading}
-              className="w-full mt-8 py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-md text-white font-semibold text-lg"
+              className="w-full mt-8 py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-md text-white font-semibold text-lg flex items-center justify-center gap-3"
             >
-              {isLoading ? "Generating..." : "Generate SQL Script"}
+              {isLoading && (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              )}
+              {isLoading ? "Generating SQL..." : "Generate SQL Script"}
             </button>
 
             {sqlTabs.length > 0 && (
